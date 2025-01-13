@@ -1,0 +1,40 @@
+
+services:
+  # Service pour MySQL
+  mysql:
+    image: mysql:latest
+    container_name: mysql-container
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"  # Mot de passe root
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./etudiants.sql:/docker-entrypoint-initdb.d/etudiants.sql
+      - db_data:/var/lib/mysql  # Volume pour persister les données de MySQL
+    networks:
+      - mynetwork
+
+  # Service pour l'application Java
+  app:
+    build:
+      context: .  # Contexte de build (le dossier courant)
+      dockerfile: Dockerfile
+    container_name: ktor-all-container
+    volumes:
+      - ./app:/app  # Lier le dossier `app` local au conteneur
+    command: java -jar /app/ktor-all.jar  # Exécution de l'application Java
+    depends_on:
+      - mysql  # L'application dépend de MySQL, donc elle attend que le conteneur MySQL soit prêt
+    ports:
+      - "8080:8080"  # Port pour exposer l'application Java
+    networks:
+      - mynetwork
+
+# Volumes définis pour la persistance des données
+volumes:
+  db_data:
+
+networks:
+  mynetwork:
+    driver: bridge
